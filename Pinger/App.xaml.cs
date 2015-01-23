@@ -44,7 +44,7 @@ namespace Pinger
 
             var app = this;
 
-            notifyIcon.Click += (s, a) => { ShowDiagnostics(); };
+            notifyIcon.DoubleClick += (s, a) => { ShowDiagnostics(); };
             notifyIcon.ContextMenu = new ContextMenu(new MenuItem[]
             {
                 new MenuItem("Show Diagnostics", new EventHandler((o, e) => { ShowDiagnostics(); })),
@@ -81,40 +81,53 @@ namespace Pinger
             int timeout = 500;
 
             System.Console.Write("Pinging... ");
-            PingReply reply = ping.Send("google.com", timeout, buffer, new PingOptions());
-            System.Console.WriteLine(reply.Status.ToString() + " " + reply.RoundtripTime + "ms (" + (reply.Address == null ? "null" : reply.Address.ToString()) + ")");
-
-            if (reply.Status == IPStatus.Success)
+            try
             {
-                lastSuccess = System.DateTime.Now;
+                // ping 216.58.220.142 (google.com)
+                PingReply reply = ping.Send("216.58.220.142", timeout, buffer, new PingOptions());
+                System.Console.WriteLine(reply.Status.ToString() + " " + reply.RoundtripTime + "ms (" + (reply.Address == null ? "null" : reply.Address.ToString()) + ")");
 
-                if (notifyIcon.Icon != ICON_GOOD)
+                if (reply.Status == IPStatus.Success)
                 {
-                    notifyIcon.Icon = ICON_GOOD;
-                    notifyIcon.Visible = true;
-                    notifyIcon.Text = "connection ok (" + reply.RoundtripTime + "ms)";
-                }
-            }
-            else
-            {
-                var text = "connection out for " + (System.DateTime.Now - lastSuccess).Seconds + " seconds";
+                    lastSuccess = System.DateTime.Now;
 
+                    if (notifyIcon.Icon != ICON_GOOD)
+                    {
+                        notifyIcon.Icon = ICON_GOOD;
+                        notifyIcon.Visible = true;
+                        notifyIcon.Text = "connection ok (" + reply.RoundtripTime + "ms)";
+                    }
+                }
+                else
+                {
+                    var text = "connection out for " + (System.DateTime.Now - lastSuccess).Seconds + " seconds";
+
+                    notifyIcon.BalloonTipText = text;
+                    notifyIcon.Text = text;
+
+                    if (notifyIcon.Icon != ICON_BAD)
+                    {
+                        notifyIcon.Icon = ICON_BAD;
+                        notifyIcon.Visible = true;
+
+                        var diff = System.DateTime.Now - lastSuccess;
+                        if (diff > TimeSpan.FromSeconds(2.0))
+                        {
+                            notifyIcon.ShowBalloonTip(5000); // Shows BalloonTip 
+                        }
+                    }
+                }
+            } catch (PingException ex)
+            {
+                var text = ex.Message;
+                if (ex.InnerException != null) text = ex.InnerException.Message;
+
+                text = text.Substring(0, text.Length < 63 ? text.Length : 63);
                 notifyIcon.BalloonTipText = text;
                 notifyIcon.Text = text;
 
-                if (notifyIcon.Icon != ICON_BAD)
-                {
-                    notifyIcon.Icon = ICON_BAD;
-                    notifyIcon.Visible = true;
-
-                    var diff = System.DateTime.Now - lastSuccess;
-                    if (diff > TimeSpan.FromSeconds(2.0))
-                    {
-                        notifyIcon.ShowBalloonTip(5000); // Shows BalloonTip 
-                    }
-                }
+                notifyIcon.ShowBalloonTip(1000); // Shows BalloonTip 
             }
-
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
