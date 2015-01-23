@@ -44,14 +44,33 @@ namespace Pinger
 
             var app = this;
 
+            notifyIcon.Click += (s, a) => { ShowDiagnostics(); };
             notifyIcon.ContextMenu = new ContextMenu(new MenuItem[]
             {
+                new MenuItem("Show Diagnostics", new EventHandler((o, e) => { ShowDiagnostics(); })),
+                new MenuItem("-"),
                 new MenuItem("Exit", new EventHandler((o, e) => {app.Shutdown();})),
             });
 
             dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
             dispatcherTimer.Start();
+        }
+
+        private void ShowDiagnostics()
+        {
+            try
+            {
+                System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.AppStarting;
+                System.Diagnostics.Process.Start("http://10.0.0.138");
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                System.Windows.Input.Mouse.OverrideCursor = null;
+            }
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -73,7 +92,7 @@ namespace Pinger
                 {
                     notifyIcon.Icon = ICON_GOOD;
                     notifyIcon.Visible = true;
-                    notifyIcon.Text = "connection ok";
+                    notifyIcon.Text = "connection ok (" + reply.RoundtripTime + "ms)";
                 }
             }
             else
