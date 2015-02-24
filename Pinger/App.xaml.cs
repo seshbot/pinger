@@ -62,7 +62,7 @@ namespace Pinger
             try
             {
                 System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.AppStarting;
-                System.Diagnostics.Process.Start("http://10.0.0.138");
+                System.Diagnostics.Process.Start("http://10.0.0.138/cgi/b/events/?be=0&l0=1&l1=2");
             }
             catch (Exception)
             {
@@ -89,30 +89,30 @@ namespace Pinger
 
                 if (reply.Status == IPStatus.Success)
                 {
+                    notifyIcon.Text = "connection ok (" + reply.RoundtripTime + "ms)";
                     lastSuccess = System.DateTime.Now;
 
                     if (notifyIcon.Icon != ICON_GOOD)
                     {
                         notifyIcon.Icon = ICON_GOOD;
                         notifyIcon.Visible = true;
-                        notifyIcon.Text = "connection ok (" + reply.RoundtripTime + "ms)";
                     }
                 }
                 else
                 {
-                    var text = "connection out for " + (System.DateTime.Now - lastSuccess).Seconds + " seconds";
-
-                    notifyIcon.BalloonTipText = text;
-                    notifyIcon.Text = text;
-
-                    if (notifyIcon.Icon != ICON_BAD)
+                    var diff = System.DateTime.Now - lastSuccess;
+                    if (diff > TimeSpan.FromSeconds(2.0))
                     {
-                        notifyIcon.Icon = ICON_BAD;
-                        notifyIcon.Visible = true;
+                        var text = "connection out for " + (System.DateTime.Now - lastSuccess).Seconds + " seconds";
 
-                        var diff = System.DateTime.Now - lastSuccess;
-                        if (diff > TimeSpan.FromSeconds(2.0))
+                        notifyIcon.BalloonTipText = text;
+                        notifyIcon.Text = text;
+
+                        if (notifyIcon.Icon != ICON_BAD)
                         {
+                            notifyIcon.Icon = ICON_BAD;
+                            notifyIcon.Visible = true;
+
                             notifyIcon.ShowBalloonTip(5000); // Shows BalloonTip 
                         }
                     }
